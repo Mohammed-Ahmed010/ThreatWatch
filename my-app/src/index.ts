@@ -1,7 +1,11 @@
 import { Hono } from 'hono'
 import {streamSSE} from 'hono/streaming'
+import { hanldeAttack } from './redis'
+
+
 const app = new Hono()
 const countries = ["US", "CN", "RU", "IN", "DE", "BR", "FR", "GB", "JP", "AU"]
+
 
 function randomAttack(){
   let src=countries[Math.floor(Math.random()*countries.length)]
@@ -19,27 +23,6 @@ function randomAttack(){
   }
 }
 
-const aggregates=new Map<string,{src:string;dst:string;count:number;lastSeen:number}>()
-
-
-function addAttack(attack:{src:string;dst:string}){
-  const key=`${attack.src}-${attack.dst}`
-  const existing= aggregates.get(key)
-  if(existing){
-    existing.count++
-    existing.lastSeen=Date.now()
-  }else{
-    aggregates.set(key,{src:attack.src,dst:attack.dst,count:1,lastSeen:Date.now()})
-  }
-}
-
-
-
-function flushAggregates(){
-  const data=Array.from(aggregates.values())
-  aggregates.clear()
-  return data
-}
 
 app.get('/', (c) => {
   return c.text('Hello Hono!')
@@ -56,16 +39,17 @@ app.get("/events",(c)=>{
       c.header('Connection','keep-alive')
       c.header('X-Accel-Buffering','no')
       return streamSSE(c,async(stream)=>{
-        for(let i=0;i<5;i++){
-          const attack=randomAttack()
-          addAttack({src:attack.src,dst:attack.dst})
-          await stream.sleep(1000)
-      }
-      const summary=flushAggregates()
-      await stream.writeSSE({
-        event:"summary",
-        data:JSON.stringify(summary)
-      })
+          while(true){    
+            const attack=randomAttack()
+            await hanldeAttack({src:attack.src,dst:attack.dst})
+
+            await stream.writeSSE({
+              event: "attack",
+              data: JSON.stringify(attack),
+             })
+            await stream.sleep(2000)
+          }
+     
 
       })
 })
