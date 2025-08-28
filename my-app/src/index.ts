@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
 import {streamSSE} from 'hono/streaming'
-import { hanldeAttack } from './redis'
+import { hanldeAttack,flushAggregatesRedis, redis } from './redis'
 
 
 const app = new Hono()
@@ -24,7 +24,7 @@ function randomAttack(){
 }
 
 
-app.get('/', (c) => {
+app.get('/', async(c) => {
   return c.text('Hello Hono!')
 })
 
@@ -39,7 +39,7 @@ app.get("/events",(c)=>{
       c.header('Connection','keep-alive')
       c.header('X-Accel-Buffering','no')
       return streamSSE(c,async(stream)=>{
-          while(true){    
+          while(true){   
             const attack=randomAttack()
             await hanldeAttack({src:attack.src,dst:attack.dst})
 
@@ -47,14 +47,53 @@ app.get("/events",(c)=>{
               event: "attack",
               data: JSON.stringify(attack),
              })
-            await stream.sleep(2000)
+            await stream.sleep(1000)
           }
      
 
       })
+
+})
+app.get("/stream",async(c)=>{
+const stream= new ReadableStream({
+  async start(controller){
+    setInterval(async() => {
+     const keys = await redis.keys("attacks:*")
+     const values=await Promise.all(keys.map(k=>redis.get(k)))
+      
+      const data:Record<string,number>={}
+      keys.forEach((key,i)=>{
+        data[key]=values[i]? Number(values[i]):0
+      })
+
+      const text= `data: ${JSON.stringify(data)}\n\n`
+      controller.enqueue(
+       new TextEncoder().encode(text)
+      )
+    }, 2000);
+  }
+})
+return new Response(stream,{
+  headers:{ "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      "Connection": "keep-alive",}
+})
+ 
+
 })
 
-
+app.get("/checking",async(c)=>{
+  return streamSSE(c,async(stream)=>{
+    while(true){
+      await stream.sleep(5000)
+      const values=flushAggregatesRedis()
+      await stream.writeSSE({
+        event:'JSON',
+        data:JSON.stringify(values)
+      })
+    }
+  })
+})
 
 app.get('/sse', async (c) => {
   return streamSSE(c, async (stream) => {

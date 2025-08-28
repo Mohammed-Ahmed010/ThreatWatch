@@ -1,9 +1,15 @@
 import { PrismaClient } from "@prisma/client";
 
 
-export const prisam=new PrismaClient()
+export const prisma=new PrismaClient()
 
 
-export async function saveToDb(data:string[]){
-
+export async function saveToDb(attacks:string[]){
+    for( const attack of attacks ){
+        // await prisma.attackAggregate.create({
+        //     // data:{
+        //     //     src:attack.src
+        //     // }
+        // })
+    }
 }
