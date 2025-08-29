@@ -12,6 +12,16 @@ export const redis=new Redis({
 export async function hanldeAttack(attack:{src:string;dst:string}){
         await redis.incr(`attacks:${attack.src}:${attack.dst}`)
         await redis.expire(`attacks:${attack.src}:${attack.dst}`,60*3)
+        const event = {
+            src: attack.src,
+            dst: attack.dst,
+            type: "incr",
+            at: Date.now() 
+        }
+
+         // publish to channel
+        //    console.log("📡 Event:", event);
+        await redis.publish("attacks-channel", JSON.stringify(event))
 
         // await redis.incr(`attacks:${attack.src}:total`)
         // await redis.expire(`attacks:${attack.src}:total`,60*3)
@@ -20,6 +30,7 @@ export async function hanldeAttack(attack:{src:string;dst:string}){
         // await redis.expire(`attacks:total`,60*3)
 
         await addAttackRedis(attack)
+        
 }
 
 export async function addAttackRedis(attack:{src:string;dst:string}){

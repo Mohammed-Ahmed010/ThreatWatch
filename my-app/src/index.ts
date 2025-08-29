@@ -57,20 +57,20 @@ app.get("/events",(c)=>{
 app.get("/stream",async(c)=>{
 const stream= new ReadableStream({
   async start(controller){
-    setInterval(async() => {
-     const keys = await redis.keys("attacks:*")
-     const values=await Promise.all(keys.map(k=>redis.get(k)))
-      
-      const data:Record<string,number>={}
-      keys.forEach((key,i)=>{
-        data[key]=values[i]? Number(values[i]):0
-      })
+    const sub =redis.duplicate()
+    await sub.subscribe("attacks-channel")
+sub.on("message", (channel, message) => {
+  controller.enqueue(
+    new TextEncoder().encode(`data: ${message}\n\n`)
+  )
+})
 
-      const text= `data: ${JSON.stringify(data)}\n\n`
-      controller.enqueue(
-       new TextEncoder().encode(text)
-      )
-    }, 2000);
+  c.req.raw.signal.addEventListener("abort", async () => {
+        await sub.unsubscribe("attacks-channel");
+        sub.disconnect();
+        // controller.close();
+      });
+
   }
 })
 return new Response(stream,{
