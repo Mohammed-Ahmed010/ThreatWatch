@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 import { Card } from "@/components/ui/card"
+import { GlobeDemo } from "@/pages/globeDemo";
 
 interface Attack {
   id: string
@@ -170,92 +171,8 @@ export default function AttackMap() {
 
       {/* Main Map */}
       <Card className="p-4">
-        <div className="relative w-full h-[600px] bg-slate-900 rounded-lg overflow-hidden">
-          <svg ref={svgRef} className="w-full h-full" viewBox="0 0 1000 500" preserveAspectRatio="xMidYMid meet">
-            {/* World map background (simplified continents) */}
-            <defs>
-              <pattern id="grid" width="50" height="50" patternUnits="userSpaceOnUse">
-                <path d="M 50 0 L 0 0 0 50" fill="none" stroke="#1e293b" strokeWidth="1" opacity="0.3" />
-              </pattern>
-            </defs>
-
-            <rect width="1000" height="500" fill="url(#grid)" />
-
-            {/* Simplified world continents */}
-            <g fill="#334155" stroke="#475569" strokeWidth="1">
-              {/* North America */}
-              <path d="M 50 80 Q 150 60 250 100 L 280 180 Q 200 200 120 160 Z" />
-              {/* South America */}
-              <path d="M 200 250 Q 250 240 280 300 L 260 400 Q 220 380 200 320 Z" />
-              {/* Europe */}
-              <path d="M 450 80 Q 520 70 580 100 L 570 140 Q 500 150 450 120 Z" />
-              {/* Africa */}
-              <path d="M 480 150 Q 550 140 580 200 L 570 350 Q 520 360 480 300 Z" />
-              {/* Asia */}
-              <path d="M 600 60 Q 750 50 850 120 L 880 200 Q 800 220 650 180 Z" />
-              {/* Australia */}
-              <path d="M 750 350 Q 820 340 850 380 L 840 400 Q 780 410 750 380 Z" />
-            </g>
-
-            {/* Location dots */}
-            {LOCATIONS.map((location, index) => {
-              const coords = projectCoordinates(location.lat, location.lng, 1000, 500)
-              return (
-                <g key={index}>
-                  <circle cx={coords.x} cy={coords.y} r="3" fill="#60a5fa" className="animate-pulse" />
-                  <circle
-                    cx={coords.x}
-                    cy={coords.y}
-                    r="8"
-                    fill="none"
-                    stroke="#60a5fa"
-                    strokeWidth="1"
-                    opacity="0.5"
-                  />
-                </g>
-              )
-            })}
-
-            {/* Animated attack lines */}
-            {attacks.map((attack) => {
-              const currentX = attack.x1 + (attack.x2 - attack.x1) * attack.progress
-              const currentY = attack.y1 + (attack.y2 - attack.y1) * attack.progress
-              const color = ATTACK_TYPES[attack.type].color
-
-              return (
-                <g key={attack.id}>
-                  {/* Attack trail */}
-                  <line
-                    x1={attack.x1}
-                    y1={attack.y1}
-                    x2={currentX}
-                    y2={currentY}
-                    stroke={color}
-                    strokeWidth="2"
-                    opacity={0.6}
-                    strokeDasharray="5,5"
-                  />
-
-                  {/* Attack projectile */}
-                  <circle cx={currentX} cy={currentY} r="4" fill={color} className="drop-shadow-lg">
-                    <animate attributeName="r" values="4;6;4" dur="0.5s" repeatCount="indefinite" />
-                  </circle>
-
-                  {/* Pulsing origin */}
-                  <circle cx={attack.x1} cy={attack.y1} r="6" fill={color} opacity="0.3">
-                    <animate attributeName="r" values="6;12;6" dur="1s" repeatCount="indefinite" />
-                  </circle>
-                </g>
-              )
-            })}
-          </svg>
-
-          {/* Overlay info */}
-          <div className="absolute top-4 left-4 text-white">
-            <div className="text-sm opacity-75">Live Attack Monitor</div>
-            <div className="text-xs opacity-50">{new Date().toLocaleTimeString()}</div>
-          </div>
-        </div>
+        <div className="relative w-full h-full bg-slate-900 rounded-lg overflow-hidden"><GlobeDemo/></div>
+        
       </Card>
     </div>
   )
